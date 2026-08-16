@@ -1,6 +1,8 @@
 # dsh-porter
 
-DSH（DeepSeek Harness）会话数据运维工具：跨根迁移（cwd 转化）、体检、修复、格式转换、归档。**零 dsh 依赖**，纯 Node CLI。
+DSH（DeepSeek Harness）会话数据运维工具：跨根迁移（cwd 转化）、**workspace 归属同步**、体检、修复、格式转换、归档。**零 dsh 依赖**，纯 Node CLI。
+
+> v0.2.0：migrate 自动同步目标端 workspace.json 归属（解决跨端迁移后"未分组"痛点），inspect 性能提升 15 倍（尾帧验证）。
 
 > 背景：DSH 生态多封装共存（EAC / dsh_desktop / 官方 CLI）、跨平台（WSL / Windows），会话数据（`sessions/*/session.jsonl.zstd`）在根之间搬运时需要 **cwd 路径转化 + 格式合规重写**——官方无此工具，本项目填补空白。
 
@@ -16,7 +18,7 @@ npm install -g dsh-porter
 
 | 命令 | 用途 |
 |---|---|
-| `dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict 策略] [--copy-unchanged] [--dry-run]` | 批量迁移会话（cwd 转化 + 帧合规重写；无需转化默认 SKIP） |
+| `dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict 策略] [--copy-unchanged] [--dry-run]` | 批量迁移会话（cwd 转化 + 帧合规重写；无需转化默认 SKIP；**v0.2.0 起自动同步目标端 workspace 归属**——被迁移会话按新 cwd 加入对应 workspace 的 sessionIds，归档状态原样保留；`--no-sync-workspace` 关闭） |
 | `dsh-porter inspect <会话文件|数据根> [--json]` | 体检：id/cwd/version/帧数/行数/健康状态（ok/corrupt/unknown-format） |
 | `dsh-porter convert <会话文件> --format zstd|plain [--out 目录]` | 格式互转（zstd ↔ 明文 .jsonl；同格式返回 noop） |
 | `dsh-porter repair <会话文件> [--quarantine 目录]` | 修复：torn 截断修复（帧级最大可解前缀）/ 污染隔离 |
