@@ -1,9 +1,19 @@
-# dsh-porter — SPEC v0.3
+# dsh-porter — SPEC v0.4
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v0.4（2026-08-16，US-4 验收驱动：repair 损坏处理）
+- **US-4 验收**（构造样本走查）：
+  - 污染文件（非 zstd）→ inspect 正确识别 unknown-format ✓；流式解码拒绝（invalid zstd data）✓
+  - **截断文件（torn tail）→ fzstd 整体解码与流式解码均静默"通过"**（实测）——torn 检测必须**帧级扫描**，不能用 fzstd 单次解码判定
+  - **关键认知**：dsh 官方对 torn 是"容忍 + 截断修复"（SessionLogScanner/commitRepair 语义）——torn 属"可修复"级别，不属灾难
+- **决策**：
+  - inspect 健康分级：ok / torn（帧级扫描确认，提示可 repair）/ corrupt / unknown-format
+  - repair 的 torn 修复 = **截断尾部残缺帧**（保留完整前缀，对齐 dsh 官方语义）；repair 的 unknown-format 处理 = 隔离 quarantine + 报告（含"WSL 端是否有同 id 副本"建议）
+  - 帧级扫描实现方案：魔数切帧 + 逐帧流式解码验证尾帧（标注：fzstd 单次解码不可靠，需帧级；备选：zstd CLI -t 校验）
 
 ### v0.3（2026-08-16，技术实测 + US-3 验收驱动）
 - **开放问题 #1 关闭（实测 PASS）**："迁移产物 + dsh 继续 append"——在迁移产物（2 帧）末尾模拟追加新事件帧，整体重解码验证：1903 → 1904 行、末行为新事件、帧拼接兼容 → **决策：迁移产物可安全追加，无需特殊处理**
@@ -57,7 +67,11 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
 
 ### 3.4 repair（修复）
 - 输入：损坏会话 + `[--quarantine 目录]`（默认 `.quarantine/`）
-- 处理：检测损坏类型（非 zstd 内容 / 帧结构错误 / header 损坏）→ 能救则帧重建 → 不能救移入 quarantine（不删除）→ 报告 + 建议（如"WSL 端有同 id 副本"）
+- 处理（按损坏类型）：
+  - **torn**（帧级扫描确认）：截断尾部残缺帧 → 写回（对齐 dsh 官方 commitRepair 语义；保留完整前缀）
+  - **corrupt**（帧结构错误/header 损坏）：能救则帧重建，不能救移入 quarantine（不删除）
+  - **unknown-format**（非 zstd）：移入 quarantine + 报告（含"WSL 端是否有同 id 副本可恢复"建议）
+- **帧级扫描**（torn 检测实现）：魔数切帧 + 逐帧解码验证尾帧完整性（fzstd 单次/流式解码对 torn 静默，实测不可靠；备选 zstd CLI -t）
 
 ### 3.5 archive（归档）
 - 输入：`<源根> <归档根> [--by project|month]`
