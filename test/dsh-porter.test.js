@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { migrate } from '../src/migrate.js';
 import { inspect } from '../src/inspect.js';
@@ -145,6 +145,48 @@ test('migrate: 原子写入（无临时文件残留）', async () => {
     const leftovers = readdirSync(path.join(dst, 'sessions', '--mnt-f-PROJECTS--', r.items[0].id))
       .filter(n => n.includes('.tmp-'));
     assert.equal(leftovers.length, 0, '不应有临时文件残留');
+  } finally { cleanup(src); cleanup(dst); }
+});
+
+test('migrate: workspace 同步（US-W1/W2）——归属合并 + 归档原样', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    const wsFile = path.join(dst, 'storages', 'workspace.json');
+    mkdirSync(path.dirname(wsFile), { recursive: true });
+    const archived = 'session-archived-00000000-0000-0000-0000-000000000001';
+    writeFileSync(wsFile, JSON.stringify({
+      unit: { name: 'workspace', version: 2 },
+      global: { initialized: true, workspaceIds: ['ws-1'], archivedSessionIds: [archived] },
+      tables: { workspaces: { 'ws-1': { path: '/mnt/f/PROJECTS', title: 'PROJECTS', sessionIds: [], createdAt: 'x', updatedAt: 'x' } } }
+    }, null, 2) + '\n', 'utf8');
+    const a = await makeSession(src, { cwd: 'F:\\PROJECTS' });
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl' });
+    assert.equal(r.summary.migrated, 1);
+    assert.ok(r.workspaceSync, '应有 workspaceSync 结果');
+    assert.equal(r.workspaceSync.preview[0].workspacePath, '/mnt/f/PROJECTS');
+    assert.ok(r.workspaceSync.preview[0].added.includes(a.id));
+    const saved = JSON.parse(readFileSync(wsFile, 'utf8'));
+    assert.ok(saved.tables.workspaces['ws-1'].sessionIds.includes(a.id), 'sessionIds 应包含迁移会话');
+    assert.deepEqual(saved.global.archivedSessionIds, [archived], '归档绝不改动');
+  } finally { cleanup(src); cleanup(dst); }
+});
+
+test('migrate: workspace dry-run 预览不写入（US-W3）', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    const wsFile = path.join(dst, 'storages', 'workspace.json');
+    mkdirSync(path.dirname(wsFile), { recursive: true });
+    writeFileSync(wsFile, JSON.stringify({
+      unit: { name: 'workspace', version: 2 },
+      global: { initialized: true, workspaceIds: ['ws-1'], archivedSessionIds: [] },
+      tables: { workspaces: { 'ws-1': { path: '/mnt/f/PROJECTS', title: 'PROJECTS', sessionIds: [], createdAt: 'x', updatedAt: 'x' } } }
+    }, null, 2) + '\n', 'utf8');
+    await makeSession(src, { cwd: 'F:\\PROJECTS' });
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl', dryRun: true });
+    assert.equal(r.dryRun, true);
+    assert.equal(r.workspaceSync.preview[0].added.length, 1, 'dry-run 应预览归属变化');
+    const saved = JSON.parse(readFileSync(wsFile, 'utf8'));
+    assert.equal(saved.tables.workspaces['ws-1'].sessionIds.length, 0, 'dry-run 不应写 workspace.json');
   } finally { cleanup(src); cleanup(dst); }
 });
 

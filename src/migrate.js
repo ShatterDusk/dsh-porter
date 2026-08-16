@@ -7,6 +7,16 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
 import { writeAtomic } from './lib/atomic.js';
+import { loadWorkspace, saveWorkspace, syncWorkspace } from './workspace.js';
+
+// workspace 同步辅助：dry-run 只预览不写；目标无 workspace.json 返回 null
+function syncWorkspaceData(wfile, moved, dryRun) {
+  let data;
+  try { data = loadWorkspace(wfile); } catch { return null; }
+  const preview = syncWorkspace(data, moved);
+  if (!dryRun && preview.length > 0) saveWorkspace(wfile, data);
+  return preview;
+}
 import { convertCwd, projectKey, detectDirection } from './lib/cwd.js';
 
 function walkSessions(root) {
@@ -97,7 +107,7 @@ async function migrateOne(z, file, opts) {
 }
 
 export async function migrate(opts) {
-  const { srcRoot, targetRoot, direction, map, conflict = 'skip', copyUnchanged = false, dryRun = false } = opts;
+  const { srcRoot, targetRoot, direction, map, conflict = 'skip', copyUnchanged = false, dryRun = false, syncWorkspaceState = true } = opts;
   if (direction !== 'auto' && direction !== 'to-wsl' && direction !== 'to-win') {
     const err = new Error('--direction 必须是 to-wsl|to-win|auto'); err.code = 'E_USAGE'; err.exitCode = 2; throw err;
   }
@@ -120,5 +130,17 @@ export async function migrate(opts) {
     failed: items.filter(i => i.status === 'failed').length,
   };
   const exitCode = summary.failed > 0 ? 1 : 0;
-  return { command: 'migrate', toolVersion: '0.1.0', dryRun, summary, items, exitCode };
+  // v0.2.0：workspace 状态同步（默认开启；--no-sync-workspace 关闭）
+  let workspaceSync = null;
+  if (syncWorkspaceState !== false) {
+    const wfile = path.join(targetRoot, 'storages', 'workspace.json');
+    const moved = items
+      .filter(i => (i.status === 'migrated' || i.status === 'copied') && i.to)
+      .map(i => ({ id: i.id, newCwd: i.to }));
+    if (moved.length > 0) {
+      const preview = syncWorkspaceData(wfile, moved, dryRun);
+      if (preview) workspaceSync = { file: wfile, preview };
+    }
+  }
+  return { command: 'migrate', toolVersion: '0.1.0', dryRun, summary, items, workspaceSync, exitCode };
 }

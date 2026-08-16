@@ -42,13 +42,15 @@ function scanSession(z, file) {
   // ② 帧级扫描：切帧 + 逐帧解码（尾部不完整帧 = torn）
   const starts = findFrames(buf);
   stat.frames = starts.length;
+  // torn 检测：只验证尾帧（整体解码已成功 → 中间帧必然完好；torn 只会发生在尾部）
+  // 性能：O(1) 替代 O(帧数)——16000 帧大会话 21s → <1s
   let torn = false;
-  for (let i = 0; i < starts.length; i++) {
-    const frameEnd = i + 1 < starts.length ? starts[i + 1] : buf.length;
-    try { z.decompress(buf.subarray(starts[i], frameEnd)); }
-    catch { torn = true; break; }
+  const lastStart = starts[starts.length - 1];
+  if (lastStart !== undefined) {
+    try { z.decompress(buf.subarray(lastStart, buf.length)); }
+    catch { torn = true; }
   }
-  stat.status = torn ? 'torn' : 'ok'; // torn 罕见（fzstd 严格），防御性保留；dsh 对 torn 可截断修复
+  stat.status = torn ? 'torn' : 'ok';
   return stat;
 }
 
