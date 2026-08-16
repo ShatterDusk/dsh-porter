@@ -1,9 +1,14 @@
-# dsh-porter — SPEC v1.9
+# dsh-porter — SPEC v2.0
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
-## 0.5 项目状态快照（2026-08-16，Round 23）
+## 0.5 项目状态快照（2026-08-16，v2.0）
+
+- **v2.0 核心**：workspace 状态同步（migrate 后归属合并，归档保留）+ inspect 性能（21s→1.4s）
+- **能力**：5 命令全实现 + workspace 同步；20/20 测试
+- **待验证**：EAC 实际重启归组（验收 ④）；push GitHub
+- **遗留**：明文验证包实测（开放问题 #2）
 
 - **能力**：5 命令全实现（migrate/inspect/convert/repair/archive），参数齐（--map/--conflict/--copy-unchanged/--dry-run/--json/--direction/--finalize 等）
 - **质量**：17/17 测试（模块层 + CLI 层）；SPEC↔实现一致性审计通过（v1.9）
@@ -12,6 +17,15 @@
 - **待办**：① GitHub 仓库（公开/私有待确认）② npm publish（需 npm 账号）③ 明文验证包实测（EAC 侧 1 分钟）
 
 ## 0. 变更记录
+
+### v2.0（2026-08-16，workspace 状态同步 + inspect 性能——实战事故驱动）
+- **背景（2026-08-16 EAC 实战事故）**：迁移 65 会话后 60 个"未分组"——dsh 会话归组 = workspace.json 归属记录（sessionIds/archivedSessionIds），非目录名；migrate 只搬 sessions/ 导致目标端归属缺失
+- **决策**：
+  - migrate 默认同步目标端 workspace.json：被迁移会话按新 cwd **精确匹配** workspace.path → sessionIds 合并（去重）；**archivedSessionIds 绝不改动**（2026-08-16 误清归档事故教训）
+  - dry-run 预览归属变化（不写入）；`--no-sync-workspace` 关闭；目标无 workspace.json 时跳过
+  - **写入纪律**：无 BOM、UTF-8、JSON indent 2；storages/*.json 禁止记事本类工具编辑（BOM+CRLF 崩 EAC 事故）
+- **性能**：inspect torn 检测从逐帧扫描（16000 帧 21s）改为**尾帧验证**（O(1)，1.4s）——torn 只可能发生在尾部（整体解码成功则中间帧完好）
+- **验收**：US-W1（归属合并）/US-W2（归档原样）/US-W3（dry-run 预览）测试化，20/20 通过
 
 ### v1.9（2026-08-16，SPEC ↔ 实现一致性审计）
 - **审计结果：全部一致**：
@@ -159,7 +173,8 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
 - 处理：遍历源 `sessions/` → 解压（fzstd）→ header.cwd 按映射表转化 → **帧合规重写**（header 一帧恰一行 + 事件一帧）→ 写入 `<目标根>/sessions/<新projectKey>/<id>/session.jsonl.zstd` → 自检（重解码行数一致）
 - **无需转化（cwd 已是目标格式）**：默认 **SKIP**（exit 0，计入报告）；`--copy-unchanged` 时原样复制（不重写）
 - 输出：逐会话进度（转化/复制/跳过三类计数）+ 汇总；`--json`
-- **不删源**（删源是 archive 的职责）；不碰 storages/manifest
+- **不删源**（删源是 archive 的职责）；不碰 manifest
+- **workspace 同步（v2.0）**：迁移后默认更新目标端 storages/workspace.json——被迁移会话按新 cwd 精确匹配 workspace.path → sessionIds 合并（去重）；**archivedSessionIds 原样保留**；dry-run 预览归属变化（不写入）；`--no-sync-workspace` 关闭；无 workspace.json 时跳过；写入无 BOM
 - 格式纪律（事故教训）：**禁止整体单帧重压**；第一帧必须恰一行 header；id 必须 UUID；同根内同 id 冲突必须按 `--conflict` 策略处理
 
 ### 3.3 convert（格式转换）
