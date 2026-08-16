@@ -171,6 +171,29 @@ test('migrate: workspace 同步（US-W1/W2）——归属合并 + 归档原样',
   } finally { cleanup(src); cleanup(dst); }
 });
 
+test('migrate: workspace 同步 to-win 方向（验收两方向）', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    // 目标根 workspace path = F:\\PROJECTS（Windows 侧）
+    const wsFile = path.join(dst, 'storages', 'workspace.json');
+    mkdirSync(path.dirname(wsFile), { recursive: true });
+    writeFileSync(wsFile, JSON.stringify({
+      unit: { name: 'workspace', version: 2 },
+      global: { initialized: true, workspaceIds: ['ws-win'], archivedSessionIds: [] },
+      tables: { workspaces: { 'ws-win': { path: 'F:\\PROJECTS', title: 'PROJECTS', sessionIds: [], createdAt: 'x', updatedAt: 'x' } } }
+    }, null, 2) + '\n', 'utf8');
+    // WSL cwd 会话 → to-win
+    const a = await makeSession(src, { cwd: '/mnt/f/PROJECTS' });
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-win' });
+    assert.equal(r.summary.migrated, 1);
+    assert.ok(r.workspaceSync, 'to-win 也应有 workspaceSync');
+    assert.equal(r.workspaceSync.preview[0].workspacePath, 'F:\\PROJECTS');
+    assert.ok(r.workspaceSync.preview[0].added.includes(a.id));
+    const saved = JSON.parse(readFileSync(wsFile, 'utf8'));
+    assert.ok(saved.tables.workspaces['ws-win'].sessionIds.includes(a.id), 'to-win 归属应写入');
+  } finally { cleanup(src); cleanup(dst); }
+});
+
 test('migrate: workspace dry-run 预览不写入（US-W3）', async () => {
   const src = makeRoot(), dst = makeRoot();
   try {
