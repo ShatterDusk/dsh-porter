@@ -3,6 +3,14 @@
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
+## 0.5 项目状态快照（2026-08-16，Round 23）
+
+- **能力**：5 命令全实现（migrate/inspect/convert/repair/archive），参数齐（--map/--conflict/--copy-unchanged/--dry-run/--json/--direction/--finalize 等）
+- **质量**：17/17 测试（模块层 + CLI 层）；SPEC↔实现一致性审计通过（v1.9）
+- **文档**：format.md（生态首份会话格式文档）/ 竞品分析 / README / 明文验证包
+- **发布**：pack 22.7kB（17 文件）验证通过；LICENSE/files 字段就绪；npm 名 dsh-porter 可用
+- **待办**：① GitHub 仓库（公开/私有待确认）② npm publish（需 npm 账号）③ 明文验证包实测（EAC 侧 1 分钟）
+
 ## 0. 变更记录
 
 ### v1.9（2026-08-16，SPEC ↔ 实现一致性审计）
