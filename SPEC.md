@@ -148,8 +148,9 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
 - 格式纪律（事故教训）：**禁止整体单帧重压**；第一帧必须恰一行 header；id 必须 UUID；同根内同 id 冲突必须按 `--conflict` 策略处理
 
 ### 3.3 convert（格式转换）
-- 输入：会话文件 + `--format zstd|plain`
+- 输入：会话文件 + `--format zstd|plain` + `[--out 目录]`
 - 输出：目标格式文件（.jsonl.zstd ↔ .jsonl，dsh 按后缀识别）；原文件不动
+- **幂等**：目标格式与源格式相同 → 返回 `noop`（不写文件）；明文定位 = 调试/分析/备份可读（体积 ≈6.4x），日常存储用 zstd
 
 ### 3.4 repair（修复）
 - 输入：损坏会话 + `[--quarantine 目录]`（默认 `.quarantine/`）

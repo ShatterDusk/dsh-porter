@@ -18,7 +18,7 @@ npm install -g dsh-porter
 |---|---|
 | `dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict 策略] [--copy-unchanged] [--dry-run]` | 批量迁移会话（cwd 转化 + 帧合规重写；无需转化默认 SKIP） |
 | `dsh-porter inspect <会话文件|数据根> [--json]` | 体检：id/cwd/version/帧数/行数/健康状态（ok/corrupt/unknown-format） |
-| `dsh-porter convert <会话文件> --format zstd|plain [--out 目录]` | 格式互转（zstd ↔ 明文 .jsonl） |
+| `dsh-porter convert <会话文件> --format zstd|plain [--out 目录]` | 格式互转（zstd ↔ 明文 .jsonl；同格式返回 noop） |
 | `dsh-porter repair <会话文件> [--quarantine 目录]` | 修复：torn 截断修复（帧级最大可解前缀）/ 污染隔离 |
 | `dsh-porter archive <源根> <归档根> [--direction X] [--dry-run]` | 归档（两阶段删源协议：迁移校验 → 暂存 → `--finalize` 清空） |
 
@@ -41,6 +41,7 @@ npm test
 - [SPEC.md](SPEC.md) — 规格与验收记录
 - [docs/format.md](docs/format.md) — DSH 会话格式文档（reverse-engineered）
 - [docs/competitor-analysis.md](docs/competitor-analysis.md) — 竞品分析
+- [examples/plain-session-demo](examples/plain-session-demo/) — 明文会话验证包（convert 产物 + EAC 验证步骤）
 
 ## License
 
