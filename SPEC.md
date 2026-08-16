@@ -193,8 +193,9 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
 }
 ```
 
-- `status` 枚举按命令域：migrate/archive 用 migrated/copied/skipped/failed；inspect 用 ok/torn/corrupt/unknown
-- `error`：失败时的机器可读错误码 + 人类消息（`"E_NO_ZSTD_DEPS" / "E_NOT_ZSTD" / "E_TORN" / "E_CONFLICT" / "E_SELF_CHECK"`）
+- `status` 枚举按命令域：migrate/archive 用 migrated/copied/skipped/failed；inspect 用 ok/corrupt/unknown-format（torn 并入 corrupt 注明）；convert 用 converted/noop；repair 用 repaired/quarantined/ok
+- `error`：失败时的机器可读错误码 + 人类消息（`"E_NO_ZSTD_DEPS" / "E_NOT_ZSTD" / "E_TORN" / "E_CONFLICT" / "E_SELF_CHECK" / "E_UNSUPPORTED_VERSION"`，全表见 §8）
+- **inspect items 专属字段**：`cwd` / `version` / `frames`（帧数）/ `lines`（行数）/ `size`（字节）/ `file`（路径）——`id` 在 header 损坏时为目录名兜底
 
 ### 3.8 错误分级与退出码
 

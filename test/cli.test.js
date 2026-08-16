@@ -42,6 +42,23 @@ test('CLI: migrate dry-run 端到端（合成数据）', async () => {
   } finally { cleanup(src); cleanup(dst); }
 });
 
+test('CLI: inspect --json 输出符合 schema', async () => {
+  const root = makeRoot();
+  try {
+    const s = await makeSession(root, { cwd: 'F:\\PROJECTS' });
+    const r = runCli('inspect', s.sessionFile, '--json');
+    assert.equal(r.status, 0);
+    const obj = JSON.parse(r.stdout);
+    assert.equal(obj.command, 'inspect');
+    const item = obj.items[0];
+    assert.equal(item.status, 'ok');
+    assert.equal(item.cwd, 'F:\\PROJECTS');
+    assert.equal(typeof item.frames, 'number');
+    assert.equal(typeof item.lines, 'number');
+    assert.equal(typeof item.size, 'number');
+  } finally { cleanup(root); }
+});
+
 test('CLI: migrate --json 输出可解析且符合 schema', async () => {
   const src = makeRoot(), dst = makeRoot();
   try {
