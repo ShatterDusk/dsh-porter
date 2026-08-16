@@ -7,12 +7,12 @@
   "main": "src/index.js",
   "engines": { "node": ">=20.11" },
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/dsh-porter.test.js"
   },
   "keywords": ["dsh", "deepseek-harness", "session", "migrate", "zstd"],
   "license": "MIT",
   "dependencies": {
-    "fzstd": "^2.0.0",
-    "@bokuweb/zstd-wasm": "^1.0.0"
+    "fzstd": "^0.1.1",
+    "@bokuweb/zstd-wasm": "^0.0.27"
   }
 }
