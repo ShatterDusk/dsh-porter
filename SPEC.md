@@ -1,9 +1,16 @@
-# dsh-porter — SPEC v1.8
+# dsh-porter — SPEC v1.9
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.9（2026-08-16，SPEC ↔ 实现一致性审计）
+- **审计结果：全部一致**：
+  - 错误码：§8 的 8 个错误码全部在实现中（E_NO_ZSTD_DEPS 在 zstd.js；审计注意 src/*.js 不递归子目录）
+  - 退出码：0/1/2/3 全实现（2 通过 `e.exitCode = 2` 赋值）
+  - 参数：§3 列出的 10 个参数（--map/--conflict/--copy-unchanged/--dry-run/--json/--direction/--format/--out/--quarantine/--finalize）与 command.js 完全对应
+  - 测试覆盖：17/17（模块层 10 + CLI 层 7）
 
 ### v1.8（2026-08-16，inspect JSON 规格化，15/15 通过）
 - §3.7 补全：inspect items 专属字段（cwd/version/frames/lines/size/file；id 损坏时目录名兜底）；status 枚举全命令域（convert noop、repair repaired/quarantined/ok）
