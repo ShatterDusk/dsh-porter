@@ -1,9 +1,17 @@
-# dsh-porter — SPEC v0.8
+# dsh-porter — SPEC v0.9
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v0.9（2026-08-16，convert 命令实现验收）
+- **convert 命令实现**（src/convert.js），验收结果：
+  - zstd→plain：`session.jsonl.zstd` → `session.jsonl`（13.5MB 明文，首行 header 完整）
+  - plain→zstd：帧合规重写（header 一帧 + 事件一帧）→ 2.1MB
+  - 往返一致性：inspect 验证 ok、21819 行完整、cwd/version 保留
+  - 实现修正：文件名后缀处理（.jsonl.zstd/.jsonl 双向去后缀，初版产生 `session.jsonl.jsonl` 的 bug 已修）
+- 剩余未实现：repair / archive（spec 已定义，含 US-4/US-6 协议）
 
 ### v0.8（2026-08-16，inspect 实现验收：torn 判定实测修正）
 - **inspect 命令实现**（src/inspect.js），验收结果：

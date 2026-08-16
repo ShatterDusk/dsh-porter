@@ -1,8 +1,11 @@
 /**
  * dsh-porter 命令分发（SPEC §3.8 退出码语义）
  */
+import { mkdirSync } from 'node:fs';
+import path from 'node:path';
 import { migrate } from './migrate.js';
 import { inspect } from './inspect.js';
+import { convertSession } from './convert.js';
 
 export class Command {
   constructor(args) { this.args = args; }
@@ -12,7 +15,7 @@ export class Command {
     switch (name) {
       case 'migrate': return this.runMigrate(rest);
       case 'inspect': return this.runInspect(rest);
-      case 'convert': return this.notImplemented('convert');
+      case 'convert': return this.runConvert(rest);
       case 'repair': return this.notImplemented('repair');
       case 'archive': return this.notImplemented('archive');
       default: {
@@ -65,6 +68,28 @@ export class Command {
     }
     console.log(`汇总: 共 ${result.summary.total} | ok ${result.summary.ok} | torn ${result.summary.torn} | corrupt ${result.summary.corrupt} | unknown ${result.summary.unknown}`);
     return { exitCode: result.exitCode };
+  }
+
+  // convert <会话文件> --format zstd|plain [--out 目录] [--json]
+  async runConvert(args) {
+    if (args.length < 1) { const e = new Error('convert 需要 <会话文件>'); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+    const file = args[0];
+    const opts = { outDir: null, json: false };
+    for (let i = 1; i < args.length; i++) {
+      const a = args[i];
+      if (a === '--format') opts.format = args[++i];
+      else if (a === '--out') opts.outDir = args[++i];
+      else if (a === '--json') opts.json = true;
+      else { const e = new Error(`未知参数: ${a}`); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+    }
+    if (!opts.format || (opts.format !== 'zstd' && opts.format !== 'plain')) {
+      const e = new Error('convert 需要 --format zstd|plain'); e.code = 'E_USAGE'; e.exitCode = 2; throw e;
+    }
+    if (opts.outDir) mkdirSync(opts.outDir, { recursive: true });
+    const result = await convertSession(file, opts);
+    if (opts.json) { const { exitCode, ...j } = result; return { json: j, exitCode }; }
+    console.log(`[converted] ${path.basename(file)} -> ${result.items[0].to}`);
+    return { exitCode: 0 };
   }
 
   notImplemented(name) {
