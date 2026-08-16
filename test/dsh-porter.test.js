@@ -72,6 +72,15 @@ test('convert: zstd<->plain 往返一致', async () => {
   } finally { cleanup(root); }
 });
 
+test('convert: 同格式转换幂等（noop）', async () => {
+  const root = makeRoot();
+  try {
+    const s = await makeSession(root, { cwd: WIN_CWD, lines: 3 });
+    const r = await convertSession(s.sessionFile, { format: 'zstd', outDir: root });
+    assert.equal(r.items[0].status, 'noop');
+  } finally { cleanup(root); }
+});
+
 test('repair: torn 截断修复 + 原文件隔离', async () => {
   const root = makeRoot();
   try {

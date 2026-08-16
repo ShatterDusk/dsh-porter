@@ -19,6 +19,12 @@ export async function convertSession(file, opts) {
   if (name.endsWith('.jsonl')) name = name.slice(0, -6);
   const baseName = name;
 
+  // 幂等：目标格式与源格式相同 → 无操作
+  const srcIsZstd = name.endsWith('.jsonl.zstd') || (isZstd && file.endsWith('.zstd'));
+  if ((format === 'zstd' && isZstd) || (format === 'plain' && !isZstd)) {
+    return { command: 'convert', toolVersion: '0.1.0', items: [{ id: path.basename(path.dirname(file)), status: 'noop', from: path.basename(file), to: path.basename(file), targetPath: file }], exitCode: 0 };
+  }
+
   if (format === 'plain') {
     // zstd/plain -> plain
     const plain = isZstd ? z.decompress(buf) : buf;

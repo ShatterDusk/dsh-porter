@@ -13,10 +13,11 @@ DSH session data ops: migrate / inspect / repair / convert / archive
 
 用法:
   dsh-porter inspect <会话|数据根> [--json]
-  dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict ask|new-id|skip|abort] [--copy-unchanged] [--dry-run] [--json]
+  dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict skip|new-id|abort] [--copy-unchanged] [--dry-run] [--json]
   dsh-porter convert <会话文件> --format zstd|plain [--out 目录]
   dsh-porter repair <会话文件> [--quarantine 目录]
-  dsh-porter archive <源根> <归档根> [--by project|month] [--dry-run] [--json]
+  dsh-porter archive <源根> <归档根> [--direction X] [--dry-run] [--json]
+  dsh-porter archive --finalize <源根>
   dsh-porter --version | --help
 
 退出码: 0 成功 / 1 部分失败 / 2 用法错误 / 3 环境错误（SPEC §3.8）
