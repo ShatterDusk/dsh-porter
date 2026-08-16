@@ -1,0 +1,9 @@
+{"type":"session","version":0,"id":"session-test-09ae9a74fae228","createdAt":1786877170785,"cwd":"F:\\PROJECTS","delegationDepth":0}
+{"type":"user/message","seq":0,"data":{"id":"m0","role":"user","content":[{"type":"text","text":"line 0"}]}}
+{"type":"user/message","seq":1,"data":{"id":"m1","role":"user","content":[{"type":"text","text":"line 1"}]}}
+{"type":"user/message","seq":2,"data":{"id":"m2","role":"user","content":[{"type":"text","text":"line 2"}]}}
+{"type":"user/message","seq":3,"data":{"id":"m3","role":"user","content":[{"type":"text","text":"line 3"}]}}
+{"type":"user/message","seq":4,"data":{"id":"m4","role":"user","content":[{"type":"text","text":"line 4"}]}}
+{"type":"user/message","seq":5,"data":{"id":"m5","role":"user","content":[{"type":"text","text":"line 5"}]}}
+{"type":"user/message","seq":6,"data":{"id":"m6","role":"user","content":[{"type":"text","text":"line 6"}]}}
+{"type":"user/message","seq":7,"data":{"id":"m7","role":"user","content":[{"type":"text","text":"line 7"}]}}
