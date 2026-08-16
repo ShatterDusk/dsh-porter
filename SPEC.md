@@ -1,9 +1,17 @@
-# dsh-porter — SPEC v0.9
+# dsh-porter — SPEC v1.0
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.0（2026-08-16，repair 命令实现验收，4/5 命令闭环）
+- **repair 命令实现**（src/repair.js），验收结果：
+  - **torn/corrupt 截断修复**：500KB 截断样本 → 帧级扫描保留最大可解前缀（1096 帧/1658 行）→ 重建写回 → inspect 验证 ok（cwd/version 保留）；原损坏文件移入 `.quarantine/`（可回滚）
+  - **unknown-format 隔离**：污染样本 → 移入 quarantine + 副本恢复建议
+  - 安全：修复前原文件必先隔离备份，修复版写回原位
+- 实现备注：帧级扫描"最大可解前缀"算法（魔数切帧 + 逐帧解码至首个失败帧）
+- 剩余未实现：archive（US-6 两阶段删源协议）
 
 ### v0.9（2026-08-16，convert 命令实现验收）
 - **convert 命令实现**（src/convert.js），验收结果：

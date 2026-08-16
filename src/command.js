@@ -6,6 +6,7 @@ import path from 'node:path';
 import { migrate } from './migrate.js';
 import { inspect } from './inspect.js';
 import { convertSession } from './convert.js';
+import { repairSession } from './repair.js';
 
 export class Command {
   constructor(args) { this.args = args; }
@@ -16,7 +17,7 @@ export class Command {
       case 'migrate': return this.runMigrate(rest);
       case 'inspect': return this.runInspect(rest);
       case 'convert': return this.runConvert(rest);
-      case 'repair': return this.notImplemented('repair');
+      case 'repair': return this.runRepair(rest);
       case 'archive': return this.notImplemented('archive');
       default: {
         const err = new Error(`未知命令: ${name}`);
@@ -90,6 +91,26 @@ export class Command {
     if (opts.json) { const { exitCode, ...j } = result; return { json: j, exitCode }; }
     console.log(`[converted] ${path.basename(file)} -> ${result.items[0].to}`);
     return { exitCode: 0 };
+  }
+
+  // repair <会话文件> [--quarantine 目录] [--json]
+  async runRepair(args) {
+    if (args.length < 1) { const e = new Error('repair 需要 <会话文件>'); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+    const file = args[0];
+    const opts = { json: false };
+    for (let i = 1; i < args.length; i++) {
+      const a = args[i];
+      if (a === '--quarantine') opts.quarantineDir = args[++i];
+      else if (a === '--json') opts.json = true;
+      else { const e = new Error(`未知参数: ${a}`); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+    }
+    const result = await repairSession(file, opts);
+    if (opts.json) { const { exitCode, ...j } = result; return { json: j, exitCode }; }
+    const item = result.items[0];
+    console.log(`[${item.status}] ${item.id.slice(0, 24)} ${item.reason ?? ''} ${item.note ?? ''}`);
+    if (item.quarantinePath) console.log(`  -> 隔离: ${item.quarantinePath}`);
+    if (item.lines !== undefined) console.log(`  -> 保留 ${item.framesKept} 帧 / ${item.lines} 行`);
+    return { exitCode: result.exitCode };
   }
 
   notImplemented(name) {
