@@ -12,6 +12,8 @@
 
 ## 1. 定位
 
+> 竞品分析：见 docs/competitor-analysis.md（dsh-plugin topic 4716 仓库盘点；核心差异化 = 跨根迁移 + cwd 转化 + 格式转换，无直接竞品；最近似 = dsh-session-health（只读体检，UI 插件）与 dsh-archived-sessions（同根归档））
+
 DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**多封装、多平台**（EAC / dsh_desktop / 官方 CLI；WSL / Windows）并存场景下的**运维工具**：迁移（cwd 转化）、体检、修复、格式转换。
 
 **为什么存在**：官方无迁移工具；会话格式无公开文档；多封装共存必然产生跨根会话（本项目作者亲历的坑：UNC 路径崩溃、单帧重压崩溃、污染文件拖垮整个 dsh web）。
