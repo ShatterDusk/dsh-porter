@@ -57,13 +57,14 @@ DSH 会话是**多帧 zstd**（第一帧必须恰一行 header，事件逐帧追
 npm test
 ```
 
-9 个测试覆盖全部命令（合成 fixtures，不依赖真实数据）。
+20 个测试覆盖全部命令（合成 fixtures，不依赖真实数据）。
 
 ## 文档
 
 - [SPEC.md](SPEC.md) — 规格与验收记录
 - [docs/format.md](docs/format.md) — DSH 会话格式文档（reverse-engineered）
 - [docs/competitor-analysis.md](docs/competitor-analysis.md) — 竞品分析
+- [docs/RELEASE.md](docs/RELEASE.md) — 发布清单（维护者用）
 - [examples/plain-session-demo](examples/plain-session-demo/) — 明文会话验证包（convert 产物 + EAC 验证步骤）
 
 ## License
