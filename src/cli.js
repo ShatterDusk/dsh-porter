@@ -5,15 +5,19 @@
  * 约定: --json 输出 schema、退出码分级（见 SPEC §3.7/3.8）
  */
 import { Command } from './command.js';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const VERSION = '0.1.0';
+// 版本单一事实源：package.json（避免与包版本打架）
+const VERSION = JSON.parse(readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')).version;
 
 const usage = `dsh-porter v${VERSION}
 DSH session data ops: migrate / inspect / repair / convert / archive
 
 用法:
   dsh-porter inspect <会话|数据根> [--json]
-  dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict skip|new-id|abort] [--copy-unchanged] [--dry-run] [--json]
+  dsh-porter migrate <源根> <目标根> --direction to-wsl|to-win|auto [--map 表] [--conflict skip|new-id|abort] [--copy-unchanged] [--no-sync-workspace] [--dry-run] [--json]
   dsh-porter convert <会话文件> --format zstd|plain [--out 目录]
   dsh-porter repair <会话文件> [--quarantine 目录]
   dsh-porter archive <源根> <归档根> [--direction X] [--dry-run] [--json]

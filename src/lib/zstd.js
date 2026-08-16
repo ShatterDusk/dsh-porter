@@ -31,7 +31,7 @@ export function loadZstd() {
       } catch { /* 尝试下一候选 */ }
     }
     if (!fz || !boku) {
-      const err = new Error('依赖缺失：fzstd / @bokuweb/zstd-wasm（项目内 npm install，或 ops 原型 .migrate-tools）');
+      const err = new Error('依赖缺失：fzstd / @bokuweb/zstd-wasm——请先运行 npm install');
       err.code = 'E_NO_ZSTD_DEPS'; err.exitCode = 3;
       throw err;
     }

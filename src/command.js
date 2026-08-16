@@ -40,6 +40,7 @@ export class Command {
       else if (a === '--conflict') opts.conflict = args[++i];
       else if (a === '--copy-unchanged') opts.copyUnchanged = true;
       else if (a === '--dry-run') opts.dryRun = true;
+      else if (a === '--no-sync-workspace') opts.syncWorkspaceState = false;
       else if (a === '--json') opts.json = true;
       else { const e = new Error(`未知参数: ${a}`); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
     }

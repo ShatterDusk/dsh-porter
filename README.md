@@ -2,7 +2,7 @@
 
 > DSH 会话数据跨端迁移的正确方式——**告别"直接 copy 数据文件"**。
 
-DSH（DeepSeek Harness）的会话数据无法通过简单复制文件夹完成迁移。`dsh-porter` 是为此而生的运维 CLI：**迁移、体检、修复、格式转换、归档**，零 dsh 依赖。
+DSH（DeepSeek Harness）的会话数据无法通过简单复制文件夹完成迁移。`dsh-porter` 是为此而生的运维 CLI：**迁移、体检、修复、格式转换、归档**。**零 dsh 依赖**（不依赖 dsh 的任何包/API，纯文件级操作；运行时仅两个小型压缩库：fzstd + @bokuweb/zstd-wasm）。
 
 ## 为什么需要它
 
@@ -73,7 +73,7 @@ cd ~/.dsh/profiles/web && pnpm install
 npm install -g dsh-porter
 ```
 
-需要 Node >= 20.11。包大小 ~25kB，零运行时依赖。
+需要 Node >= 20.11。
 
 ## 快速上手（30 秒）
 
@@ -126,7 +126,7 @@ dsh-porter migrate /mnt/c/Users/1/.dsh ~/.dsh --direction to-wsl
 npm test
 ```
 
-20+ 测试覆盖全部命令（合成 fixtures，不依赖真实数据）。
+21 个测试覆盖全部命令（合成 fixtures，不依赖真实数据）。
 
 ## 文档
 

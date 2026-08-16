@@ -1,36 +1,22 @@
-﻿{
-    "name":  "dsh-porter",
-    "version":  "0.2.0",
-    "description":  "DSH session data ops: cross-root migrate (cwd convert), inspect, repair, format convert. Zero dsh dependency.",
-    "type":  "module",
-    "bin":  {
-                "dsh-porter":  "src/cli.js"
-            },
-    "main":  "src/index.js",
-    "files":  [
-                  "src/",
-                  "README.md",
-                  "LICENSE",
-                  "SPEC.md",
-                  "docs/",
-                  "examples/"
-              ],
-    "engines":  {
-                    "node":  "\u003e=20.11"
-                },
-    "scripts":  {
-                    "test":  "node --test test/dsh-porter.test.js test/cli.test.js"
-                },
-    "keywords":  [
-                     "dsh",
-                     "deepseek-harness",
-                     "session",
-                     "migrate",
-                     "zstd"
-                 ],
-    "license":  "MIT",
-    "dependencies":  {
-                         "fzstd":  "^0.1.1",
-                         "@bokuweb/zstd-wasm":  "^0.0.27"
-                     }
+{
+  "name": "dsh-porter",
+  "version": "0.2.0",
+  "description": "DSH session data ops: cross-root migrate (cwd convert), workspace sync, inspect, repair, format convert. Zero dsh dependency.",
+  "type": "module",
+  "bin": { "dsh-porter": "src/cli.js" },
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "test": "node --test test/dsh-porter.test.js test/cli.test.js"
+  },
+  "keywords": ["dsh", "deepseek-harness", "session", "migrate", "zstd"],
+  "license": "MIT",
+  "author": "ShatterDusk",
+  "repository": { "type": "git", "url": "git+https://github.com/ShatterDusk/dsh-porter.git" },
+  "bugs": { "url": "https://github.com/ShatterDusk/dsh-porter/issues" },
+  "homepage": "https://github.com/ShatterDusk/dsh-porter#readme",
+  "files": ["src/", "README.md", "LICENSE", "SPEC.md", "docs/", "examples/"],
+  "dependencies": {
+    "fzstd": "^0.1.1",
+    "@bokuweb/zstd-wasm": "^0.0.27"
+  }
 }

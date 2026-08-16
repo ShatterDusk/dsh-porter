@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
+import { VERSION } from './version.js';
 
 export async function convertSession(file, opts) {
   const { format, outDir } = opts;
@@ -22,7 +23,7 @@ export async function convertSession(file, opts) {
   // 幂等：目标格式与源格式相同 → 无操作
   const srcIsZstd = name.endsWith('.jsonl.zstd') || (isZstd && file.endsWith('.zstd'));
   if ((format === 'zstd' && isZstd) || (format === 'plain' && !isZstd)) {
-    return { command: 'convert', toolVersion: '0.1.0', items: [{ id: path.basename(path.dirname(file)), status: 'noop', from: path.basename(file), to: path.basename(file), targetPath: file }], exitCode: 0 };
+    return { command: 'convert', toolVersion: VERSION, items: [{ id: path.basename(path.dirname(file)), status: 'noop', from: path.basename(file), to: path.basename(file), targetPath: file }], exitCode: 0 };
   }
 
   if (format === 'plain') {
@@ -42,5 +43,5 @@ export async function convertSession(file, opts) {
     targetPath = path.join(outDir ?? path.dirname(file), baseName + '.jsonl.zstd');
     writeFileSync(targetPath, Buffer.concat([frame1, frame2]));
   }
-  return { command: 'convert', toolVersion: '0.1.0', items: [{ id: path.basename(path.dirname(file)), status: 'converted', from: path.basename(file), to: path.basename(targetPath), targetPath }], exitCode: 0 };
+  return { command: 'convert', toolVersion: VERSION, items: [{ id: path.basename(path.dirname(file)), status: 'converted', from: path.basename(file), to: path.basename(targetPath), targetPath }], exitCode: 0 };
 }

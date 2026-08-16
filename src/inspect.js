@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
+import { VERSION } from './version.js';
 
 const ZSTD_MAGIC = [0x28, 0xB5, 0x2F, 0xFD];
 
@@ -78,5 +79,5 @@ export async function inspect(target) {
   }
   const summary = { total: items.length, ok: items.filter(i => i.status === 'ok').length, torn: items.filter(i => i.status === 'torn').length, corrupt: items.filter(i => i.status === 'corrupt').length, unknown: items.filter(i => i.status === 'unknown-format').length };
   const exitCode = summary.torn + summary.corrupt + summary.unknown > 0 ? 1 : 0;
-  return { command: 'inspect', toolVersion: '0.1.0', summary, items, exitCode };
+  return { command: 'inspect', toolVersion: VERSION, summary, items, exitCode };
 }

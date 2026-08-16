@@ -6,6 +6,7 @@ import { readFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
+import { VERSION } from './version.js';
 import { writeAtomic } from './lib/atomic.js';
 import { loadWorkspace, saveWorkspace, syncWorkspace } from './workspace.js';
 
@@ -142,5 +143,5 @@ export async function migrate(opts) {
       if (preview) workspaceSync = { file: wfile, preview };
     }
   }
-  return { command: 'migrate', toolVersion: '0.1.0', dryRun, summary, items, workspaceSync, exitCode };
+  return { command: 'migrate', toolVersion: VERSION, dryRun, summary, items, workspaceSync, exitCode };
 }

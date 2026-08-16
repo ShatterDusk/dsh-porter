@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { makeSession, makeRoot, cleanup, makeCorruptSession } from './helpers/fixtures.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,7 +17,9 @@ function runCli(...args) {
 test('CLI: --version / --help', () => {
   const v = runCli('--version');
   assert.equal(v.status, 0);
-  assert.equal(v.stdout.trim(), '0.1.0');
+  assert.ok(/^\d+\.\d+\.\d+$/.test(v.stdout.trim()), '版本格式 x.y.z');
+  const pkgVersion = JSON.parse(readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version;
+  assert.equal(v.stdout.trim(), pkgVersion, '版本应与 package.json 一致');
   const h = runCli('--help');
   assert.equal(h.status, 0);
   assert.ok(h.stdout.includes('dsh-porter'));
