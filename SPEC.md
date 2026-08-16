@@ -1,9 +1,17 @@
-# dsh-porter — SPEC v1.0
+# dsh-porter — SPEC v1.1
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.1（2026-08-16，archive 命令实现验收，5/5 命令闭环 🎉）
+- **archive 命令实现**（src/archive.js），两阶段协议验收：
+  - 阶段1+2a：迁移 2 会话 → 目标校验 → 源端移入 `.archive-pending/`（源剩余 0，暂存 2，归档 2）→ 提示"运行 --finalize 清空暂存"
+  - 阶段2b：`archive --finalize <源根>` → pending 清空（真删除）
+  - 安全属性：阶段1 失败即中止（源不动）；暂存可回滚；finalize 前可反悔
+  - 实现修正：pending 目录预建（rename 目标父目录 ENOENT bug）、finalize 参数透传
+- **里程碑：inspect/migrate/convert/repair/archive 五命令全部实现并验收**（SPEC §3 全章节落地）
 
 ### v1.0（2026-08-16，repair 命令实现验收，4/5 命令闭环）
 - **repair 命令实现**（src/repair.js），验收结果：

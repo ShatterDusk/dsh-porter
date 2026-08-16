@@ -7,6 +7,7 @@ import { migrate } from './migrate.js';
 import { inspect } from './inspect.js';
 import { convertSession } from './convert.js';
 import { repairSession } from './repair.js';
+import { archiveSessions } from './archive.js';
 
 export class Command {
   constructor(args) { this.args = args; }
@@ -18,7 +19,7 @@ export class Command {
       case 'inspect': return this.runInspect(rest);
       case 'convert': return this.runConvert(rest);
       case 'repair': return this.runRepair(rest);
-      case 'archive': return this.notImplemented('archive');
+      case 'archive': return this.runArchive(rest);
       default: {
         const err = new Error(`未知命令: ${name}`);
         err.code = 'E_USAGE'; err.exitCode = 2;
@@ -110,6 +111,31 @@ export class Command {
     console.log(`[${item.status}] ${item.id.slice(0, 24)} ${item.reason ?? ''} ${item.note ?? ''}`);
     if (item.quarantinePath) console.log(`  -> 隔离: ${item.quarantinePath}`);
     if (item.lines !== undefined) console.log(`  -> 保留 ${item.framesKept} 帧 / ${item.lines} 行`);
+    return { exitCode: result.exitCode };
+  }
+
+  // archive <源根> <归档根> [--direction X] [--dry-run] [--json] | archive --finalize <源根>
+  async runArchive(args) {
+    const finalize = args.includes('--finalize');
+    const opts = { json: args.includes('--json'), dryRun: args.includes('--dry-run'), direction: 'to-wsl', finalize: args.includes('--finalize') };
+    const positional = [];
+    for (let i = 0; i < args.length; i++) {
+      const a = args[i];
+      if (a === '--direction') opts.direction = args[++i];
+      else if (a === '--json' || a === '--dry-run' || a === '--finalize') { /* flag */ }
+      else positional.push(a);
+    }
+    if (finalize) {
+      if (positional.length < 1) { const e = new Error('archive --finalize 需要 <源根>'); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+      opts.srcRoot = positional[0];
+    } else {
+      if (positional.length < 2) { const e = new Error('archive 需要 <源根> <归档根>'); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+      opts.srcRoot = positional[0]; opts.archiveRoot = positional[1];
+    }
+    const result = await archiveSessions(opts);
+    if (opts.json) { const { exitCode, ...j } = result; return { json: j, exitCode }; }
+    if (result.note) console.log(result.note);
+    if (result.summary) console.log(`汇总: 迁移 ${result.summary.migrated ?? '-'} | 复制 ${result.summary.copied ?? '-'} | 跳过 ${result.summary.skipped ?? '-'} | 失败 ${result.summary.failed ?? '-'} | 暂存 ${result.summary.pending ?? '-'}`);
     return { exitCode: result.exitCode };
   }
 
