@@ -1,9 +1,15 @@
-# dsh-porter — SPEC v1.3
+# dsh-porter — SPEC v1.4
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.4（2026-08-16，发布基础：依赖独立化 + npm test 标准化）
+- **依赖版本修正**：fzstd ^0.1.1、@bokuweb/zstd-wasm ^0.0.27（初版写的 2.0.0/1.0.0 不存在）
+- **npm install 成功**：依赖进项目 node_modules（不再依赖 ops 原型 .migrate-tools fallback；zstd.js 双候选保留为开发期兜底）
+- **npm test 标准化**：scripts.test 修正为显式文件路径（node --test test/dsh-porter.test.js），9/9 通过
+- package-lock.json 入仓；发布前置（GitHub 仓库/npm publish）待用户确认
 
 ### v1.3（2026-08-16，--conflict 实现 + 参数测试 + README）
 - **--conflict 策略实现**（spec §3.2 补全）：skip（默认，目标同 id 会话跳过）/ new-id（冲突生成新 UUID）/ abort（E_CONFLICT 中止）
