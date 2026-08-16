@@ -39,6 +39,10 @@ async function migrateOne(z, file, opts) {
     const first = plain.indexOf(0x0A);
     if (first < 0) return { id, status: 'failed', error: 'E_TORN', targetPath: null };
     const header = JSON.parse(plain.subarray(0, first).toString('utf8'));
+    // 格式演进守卫：不认识的 version 拒绝操作（对齐 dsh 官方"宁拒不猜"）
+    if (header.version > 0) {
+      return { id, status: 'failed', error: 'E_UNSUPPORTED_VERSION', targetPath: null };
+    }
     const srcCwd = header.cwd ?? '';
     const newCwd = convertCwd(srcCwd, direction, mapRules);
     if (newCwd === srcCwd) {

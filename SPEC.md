@@ -218,9 +218,22 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
 - **v0.2.0**：convert + repair + `--map` 多路径映射表 + 测试套件（真实会话 fixtures）
 - **v0.3.0**：archive + 会话格式文档（docs/format.md，生态稀缺品）+ TUI 选择器（可选）
 
-## 7. 开放问题
+## 7. 开放问题（v1.5 收敛：3/4 关闭）
 
-1. 迁移产物 + dsh 继续 append 的完整闭环（帧边界不影响追加——需实测验证）
-2. 明文模式体积/性能取舍
-3. 格式演进（dsh 改 version）的拒绝策略
-4. 与 `dsh-switch.sh` 的关系：独立发布 + 本地保留集成
+1. ~~迁移产物 + dsh 继续 append 的完整闭环~~ → **已实测关闭（v0.3）**：追加新帧后整体解码验证通过
+2. **明文模式体积/性能取舍** → **已决策（v1.5）**：实测 13.5MB 明文 vs 2.1MB zstd（≈6.4x 体积差）；明文定位 = 调试/脚本分析/备份可读性，不用于日常存储；convert 明确此用途
+3. **格式演进（dsh 改 version）拒绝策略** → **已设计（v1.5）**：工具按 header.version 感知——读到高于工具已知版本的 version 时：inspect 报告 unknown-version、migrate/repair/convert **拒绝操作**（E_UNSUPPORTED_VERSION，退出码 1），提示"升级 dsh-porter"；策略对齐 dsh 官方"宁拒不猜"
+4. **与 `dsh-switch.sh` 的关系** → **已定案（v1.5）**：dsh-porter 独立发布（生态贡献）；本地保留 dsh-switch.sh 集成（migrate 子命令调 dsh-porter 或原型，作为自用快捷入口）
+
+## 8. 错误码清单（§3.7 引用全表）
+
+| 错误码 | 含义 | 场景 |
+|---|---|---|
+| E_USAGE | 参数/用法错误 | 未知命令、缺参、非法值（退出码 2） |
+| E_NO_ZSTD_DEPS | 依赖缺失 | fzstd/zstd-wasm 未安装（退出码 3） |
+| E_NOT_ZSTD | 非 zstd 非明文 | migrate 源文件格式未知 |
+| E_TORN | 损坏/截断 | 文件无完整行、解码失败 |
+| E_SELF_CHECK | 自检失败 | 重写后行数不一致（防写坏） |
+| E_CONFLICT | 同 id 冲突 | migrate --conflict abort |
+| E_UNSUPPORTED_VERSION | 格式版本不识别 | header.version 高于工具已知（防误写） |
+| E_UNKNOWN | 未分类错误 | 兜底 |
