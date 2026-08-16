@@ -136,6 +136,18 @@ test('migrate: --map 自定义映射 + auto 方向', async () => {
     assert.ok(existsSync(target), '自定义映射目标分组');
   } finally { cleanup(src); cleanup(dst); }
 });
+test('migrate: 原子写入（无临时文件残留）', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    await makeSession(src, { cwd: WIN_CWD });
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl' });
+    assert.equal(r.summary.migrated, 1);
+    const leftovers = readdirSync(path.join(dst, 'sessions', '--mnt-f-PROJECTS--', r.items[0].id))
+      .filter(n => n.includes('.tmp-'));
+    assert.equal(leftovers.length, 0, '不应有临时文件残留');
+  } finally { cleanup(src); cleanup(dst); }
+});
+
 test('archive: 两阶段协议（迁移->暂存->finalize）', async () => {
   const src = makeRoot(), dst = makeRoot();
   try {

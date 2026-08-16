@@ -2,10 +2,11 @@
  * migrate 命令实现（SPEC §3.2 / §3.6 / §3.7 / §3.8）
  * 格式纪律（docs/format.md §6）：header 一帧恰一行 + 事件一帧；id 保持；自检行数一致
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
+import { writeAtomic } from './lib/atomic.js';
 import { convertCwd, projectKey, detectDirection } from './lib/cwd.js';
 
 function walkSessions(root) {
@@ -53,7 +54,7 @@ async function migrateOne(z, file, opts) {
       const targetPath = path.join(targetDir, path.basename(file));
       if (!dryRun) {
         mkdirSync(targetDir, { recursive: true });
-        writeFileSync(targetPath, buf);
+        writeAtomic(targetPath, buf);
       }
       return { id, status: 'copied', from: srcCwd, to: srcCwd, targetPath, error: null };
     }
@@ -87,7 +88,7 @@ async function migrateOne(z, file, opts) {
     const targetPath = path.join(targetDir, 'session.jsonl.zstd');
     if (!dryRun) {
       mkdirSync(targetDir, { recursive: true });
-      writeFileSync(targetPath, out);
+      writeAtomic(targetPath, out); // 原子写：防运行中 dsh watcher 读到半成品（2026-08-16 事故）
     }
     return { id: header.id, status: 'migrated', from: srcCwd, to: newCwd, targetPath, error: null };
   } catch (e) {
