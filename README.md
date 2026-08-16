@@ -24,6 +24,27 @@ npm install -g dsh-porter
 
 所有命令支持 `--json`（机器可读）与语义化退出码（0 成功 / 1 部分失败 / 2 用法 / 3 环境）。
 
+## 典型用法
+
+```bash
+# 体检（先看数据根健康状态）
+dsh-porter inspect C:\\Users\\1\\.dsh
+
+# 迁移预览 → 执行（EAC 的 Windows 根 → WSL 根归档）
+dsh-porter migrate C:\\Users\\1\\.dsh ~/.dsh --direction to-wsl --dry-run
+dsh-porter migrate C:\\Users\\1\\.dsh ~/.dsh --direction to-wsl
+
+# 损坏会话修复（torn 截断修复 / 污染隔离）
+dsh-porter repair ~/.dsh/sessions/--mnt-f-PROJECTS--/<id>/session.jsonl.zstd
+
+# 归档（两阶段：迁移暂存 → 确认后清空）
+dsh-porter archive C:\\Users\\1\\.dsh ~/.dsh --direction to-wsl --dry-run
+dsh-porter archive --finalize C:\\Users\\1\\.dsh
+
+# 脚本消费（--json）
+dsh-porter inspect ~/.dsh --json | jq '.summary'
+```
+
 ## 格式纪律（重要）
 
 DSH 会话是**多帧 zstd**（第一帧必须恰一行 header，事件逐帧追加）。**禁止整体单帧重压**（会导致 dsh web 崩溃——本项目作者亲历）。详见 [docs/format.md](docs/format.md)（生态内首份会话格式文档）。

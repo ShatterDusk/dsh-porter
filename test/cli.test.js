@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeSession, makeRoot, cleanup } from './helpers/fixtures.js';
+import { existsSync } from 'node:fs';
+import { makeSession, makeRoot, cleanup, makeCorruptSession } from './helpers/fixtures.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.join(__dirname, '..', 'src', 'cli.js');
@@ -57,6 +58,30 @@ test('CLI: inspect --json 输出符合 schema', async () => {
     assert.equal(typeof item.lines, 'number');
     assert.equal(typeof item.size, 'number');
   } finally { cleanup(root); }
+});
+
+test('CLI: repair 污染隔离端到端', async () => {
+  const root = makeRoot();
+  try {
+    const p = await makeCorruptSession(root, { mode: 'polluted' });
+    const r = runCli('repair', p.sessionFile);
+    assert.equal(r.status, 1);
+    assert.ok(r.stdout.includes('quarantined'));
+    assert.ok(!existsSync(p.sessionFile), '污染文件应移出原位');
+  } finally { cleanup(root); }
+});
+
+test('CLI: archive --finalize 端到端', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    await makeSession(src, { cwd: 'F:\\PROJECTS' });
+    const r1 = runCli('archive', src, dst, '--direction', 'to-wsl');
+    assert.equal(r1.status, 0);
+    assert.ok(existsSync(path.join(src, '.archive-pending')), '暂存区应存在');
+    const r2 = runCli('archive', '--finalize', src);
+    assert.equal(r2.status, 0);
+    assert.ok(!existsSync(path.join(src, '.archive-pending')), '暂存区应清空');
+  } finally { cleanup(src); cleanup(dst); }
 });
 
 test('CLI: migrate --json 输出可解析且符合 schema', async () => {
