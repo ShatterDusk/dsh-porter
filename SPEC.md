@@ -1,9 +1,13 @@
-# dsh-porter — SPEC v1.6
+# dsh-porter — SPEC v1.7
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.7（2026-08-16，CLI 层端到端测试，14/14 通过）
+- **CLI 端到端测试**（test/cli.test.js，spawn 真实进程）：--version/--help、用法错误退出码 2（E_USAGE）、migrate dry-run 端到端、--json 输出 schema 解析验证
+- 测试分层完成：模块层（10 测试）+ CLI 层（4 测试）双覆盖；npm test 脚本更新
 
 ### v1.6（2026-08-16，CLI/实现一致性 + convert 幂等）
 - **CLI usage 对齐实现**：--conflict 三策略（ask 移除）、archive --finalize 用法（--by 移除）

@@ -1,0 +1,57 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { makeSession, makeRoot, cleanup } from './helpers/fixtures.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CLI = path.join(__dirname, '..', 'src', 'cli.js');
+const NODE = process.execPath;
+
+function runCli(...args) {
+  return spawnSync(NODE, [CLI, ...args], { encoding: 'utf8' });
+}
+
+test('CLI: --version / --help', () => {
+  const v = runCli('--version');
+  assert.equal(v.status, 0);
+  assert.equal(v.stdout.trim(), '0.1.0');
+  const h = runCli('--help');
+  assert.equal(h.status, 0);
+  assert.ok(h.stdout.includes('dsh-porter'));
+});
+
+test('CLI: 用法错误 → 退出码 2（E_USAGE）', () => {
+  const r = runCli('bogus-command');
+  assert.equal(r.status, 2);
+  assert.ok(r.stderr.includes('E_USAGE'));
+  const r2 = runCli('migrate');
+  assert.equal(r2.status, 2);
+  const r3 = runCli('convert', 'x.jsonl');
+  assert.equal(r3.status, 2);
+});
+
+test('CLI: migrate dry-run 端到端（合成数据）', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    await makeSession(src, { cwd: 'F:\\PROJECTS' });
+    const r = runCli('migrate', src, dst, '--direction', 'to-wsl', '--dry-run');
+    assert.equal(r.status, 0);
+    assert.ok(r.stdout.includes('汇总'));
+  } finally { cleanup(src); cleanup(dst); }
+});
+
+test('CLI: migrate --json 输出可解析且符合 schema', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    await makeSession(src, { cwd: 'F:\\PROJECTS' });
+    const r = runCli('migrate', src, dst, '--direction', 'to-wsl', '--dry-run', '--json');
+    assert.equal(r.status, 0);
+    const obj = JSON.parse(r.stdout);
+    assert.equal(obj.command, 'migrate');
+    assert.equal(obj.dryRun, true);
+    assert.ok(Array.isArray(obj.items));
+    assert.ok(obj.summary.total >= 1);
+  } finally { cleanup(src); cleanup(dst); }
+});

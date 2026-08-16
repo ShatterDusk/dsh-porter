@@ -2,7 +2,7 @@
  * 合成会话 fixture 生成器（测试用，不依赖真实数据）
  * 用与生产相同的 zstd lib 生成合规会话（header 帧恰一行 + 事件帧）
  */
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { loadZstd } from '../../src/lib/zstd.js';
@@ -37,6 +37,7 @@ export async function makeSession(dir, { id = 'session-test-' + Math.random().to
 }
 
 export function makeRoot() { return mkdtempSync(path.join(tmpdir(), 'dsh-porter-test-')); }
+export function cleanup(root) { if (root) rmSync(root, { recursive: true, force: true }); }
 
 export async function makeCorruptSession(dir, { mode = 'polluted' } = {}) {
   const d = path.join(dir, 'sessions', 'bad-sess');

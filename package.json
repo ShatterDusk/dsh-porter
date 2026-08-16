@@ -7,7 +7,7 @@
   "main": "src/index.js",
   "engines": { "node": ">=20.11" },
   "scripts": {
-    "test": "node --test test/dsh-porter.test.js"
+    "test": "node --test test/dsh-porter.test.js test/cli.test.js"
   },
   "keywords": ["dsh", "deepseek-harness", "session", "migrate", "zstd"],
   "license": "MIT",
