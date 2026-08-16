@@ -2,7 +2,8 @@
  * migrate 命令实现（SPEC §3.2 / §3.6 / §3.7 / §3.8）
  * 格式纪律（docs/format.md §6）：header 一帧恰一行 + 事件一帧；id 保持；自检行数一致
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { loadZstd } from './lib/zstd.js';
 import { convertCwd, projectKey, detectDirection } from './lib/cwd.js';
@@ -21,7 +22,8 @@ function walkSessions(root) {
 }
 
 async function migrateOne(z, file, opts) {
-  const { targetRoot, direction, mapRules, copyUnchanged, dryRun } = opts;
+  const { targetRoot, direction, mapRules, copyUnchanged, dryRun, conflict = 'skip' } = opts;
+  let newId = null; // conflict=new-id 时的新 id
   const id = path.basename(path.dirname(file));
   try {
     const buf = readFileSync(file);
@@ -52,6 +54,20 @@ async function migrateOne(z, file, opts) {
       return { id, status: 'copied', from: srcCwd, to: srcCwd, targetPath, error: null };
     }
     header.cwd = newCwd;
+
+    // conflict 策略：目标已有同 id 会话
+    const conflictPath = path.join(targetRoot, 'sessions', projectKey(newCwd), header.id, 'session.jsonl.zstd');
+    if (existsSync(conflictPath)) {
+      if (conflict === 'abort') {
+        const err = new Error('目标已存在同 id 会话: ' + header.id); err.code = 'E_CONFLICT'; err.exitCode = 1; throw err;
+      }
+      if (conflict === 'new-id') {
+        header.id = 'session-' + randomUUID();
+      } else {
+        return { id, status: 'skipped', reason: 'conflict', from: srcCwd, to: newCwd, targetPath: null, error: null };
+      }
+    }
+
     const events = plain.subarray(first + 1);
     // 帧合规重写：header 一帧（恰一行）+ 事件一帧
     const frame1 = z.compress(Buffer.concat([Buffer.from(JSON.stringify(header)), Buffer.from([0x0A])]));
@@ -69,7 +85,7 @@ async function migrateOne(z, file, opts) {
       mkdirSync(targetDir, { recursive: true });
       writeFileSync(targetPath, out);
     }
-    return { id, status: 'migrated', from: srcCwd, to: newCwd, targetPath, error: null };
+    return { id: header.id, status: 'migrated', from: srcCwd, to: newCwd, targetPath, error: null };
   } catch (e) {
     return { id, status: 'failed', error: e.code || 'E_UNKNOWN', targetPath: null };
   }
@@ -85,7 +101,7 @@ export async function migrate(opts) {
   const files = walkSessions(srcRoot);
   const items = [];
   for (const f of files) {
-    const r = await migrateOne(z, f, { targetRoot, direction, mapRules, copyUnchanged, dryRun });
+    const r = await migrateOne(z, f, { targetRoot, direction, mapRules, copyUnchanged, dryRun, conflict });
     if (dryRun && (r.status === 'migrated' || r.status === 'copied')) {
       r.targetPath = '[dry-run] ' + (r.targetPath ?? '');
     }

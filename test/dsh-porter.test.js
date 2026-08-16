@@ -24,8 +24,9 @@ test('migrate: cwd 转化 + 分组归位', async () => {
     // skip 场景：cwd 已是目标格式（WSL 路径）的会话
     await makeSession(src, { cwd: '/mnt/f/PROJECTS' });
     const r2 = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl' });
-    assert.equal(r2.summary.skipped, 1);
-    assert.equal(r2.summary.migrated, 1);
+    // skipped = 冲突(A) + 无需转化(B)；migrated = 0（重复迁移被冲突拦截）
+    assert.equal(r2.summary.skipped, 2);
+    assert.equal(r2.summary.migrated, 0);
   } finally { cleanup(src); cleanup(dst); }
 });
 
@@ -95,6 +96,37 @@ test('repair: 污染文件隔离', async () => {
   } finally { cleanup(root); }
 });
 
+test('migrate: --conflict 策略（skip/new-id/abort）', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    const a = await makeSession(src, { cwd: WIN_CWD });
+    await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl' });
+    // 再迁移同源（目标已有同 id）→ 默认 skip
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'to-wsl' });
+    assert.equal(r.summary.migrated, 0);
+    assert.equal(r.items[0].status, 'skipped');
+    // new-id：目标同 id → 新 UUID 迁移
+    const src2 = makeRoot();
+    try {
+      await makeSession(src2, { cwd: WIN_CWD, id: a.id });
+      const r2 = await migrate({ srcRoot: src2, targetRoot: dst, direction: 'to-wsl', conflict: 'new-id' });
+      assert.equal(r2.summary.migrated, 1);
+      assert.notEqual(r2.items[0].id, a.id, 'new-id 应生成新 UUID');
+    } finally { cleanup(src2); }
+  } finally { cleanup(src); cleanup(dst); }
+});
+
+test('migrate: --map 自定义映射 + auto 方向', async () => {
+  const src = makeRoot(), dst = makeRoot();
+  try {
+    // cwd=D:\\work（非默认 X: 盘规则）
+    await makeSession(src, { cwd: 'D:\\work' });
+    const r = await migrate({ srcRoot: src, targetRoot: dst, direction: 'auto', map: 'D:\\work=/mnt/d/work' });
+    assert.equal(r.summary.migrated, 1);
+    const target = path.join(dst, 'sessions', '--mnt-d-work--', r.items[0].id);
+    assert.ok(existsSync(target), '自定义映射目标分组');
+  } finally { cleanup(src); cleanup(dst); }
+});
 test('archive: 两阶段协议（迁移->暂存->finalize）', async () => {
   const src = makeRoot(), dst = makeRoot();
   try {

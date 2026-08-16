@@ -1,9 +1,15 @@
-# dsh-porter — SPEC v1.2
+# dsh-porter — SPEC v1.3
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.3（2026-08-16，--conflict 实现 + 参数测试 + README）
+- **--conflict 策略实现**（spec §3.2 补全）：skip（默认，目标同 id 会话跳过）/ new-id（冲突生成新 UUID）/ abort（E_CONFLICT 中止）
+- **参数端到端测试**：--conflict 三策略、--map 自定义映射（D:\\work→/mnt/d/work）、--direction auto 自动判定——9/9 通过
+- 实现修正：migrate 返回 header.id（new-id 场景）；测试断言修正（conflict skip 语义）
+- **README 初稿**（发布准备：安装/命令表/格式纪律/测试/文档索引）
 
 ### v1.2（2026-08-16，测试套件落地，7/7 通过）
 - **自动化测试套件**（test/，node:test + 合成 fixtures）：7 测试覆盖 5 命令
