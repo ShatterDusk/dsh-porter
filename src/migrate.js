@@ -21,7 +21,7 @@ function walkSessions(root) {
 }
 
 async function migrateOne(z, file, opts) {
-  const { targetRoot, direction, mapRules, copyUnchanged } = opts;
+  const { targetRoot, direction, mapRules, copyUnchanged, dryRun } = opts;
   const id = path.basename(path.dirname(file));
   try {
     const buf = readFileSync(file);
@@ -44,9 +44,12 @@ async function migrateOne(z, file, opts) {
       if (!copyUnchanged) return { id, status: 'skipped', from: srcCwd, to: null, targetPath: null, error: null };
       // 原样复制（明文保持明文；zstd 保持 zstd）
       const targetDir = path.join(targetRoot, 'sessions', projectKey(srcCwd), id);
-      mkdirSync(targetDir, { recursive: true });
-      writeFileSync(path.join(targetDir, path.basename(file)), buf);
-      return { id, status: 'copied', from: srcCwd, to: srcCwd, targetPath: path.join(targetDir, path.basename(file)), error: null };
+      const targetPath = path.join(targetDir, path.basename(file));
+      if (!dryRun) {
+        mkdirSync(targetDir, { recursive: true });
+        writeFileSync(targetPath, buf);
+      }
+      return { id, status: 'copied', from: srcCwd, to: srcCwd, targetPath, error: null };
     }
     header.cwd = newCwd;
     const events = plain.subarray(first + 1);
@@ -59,11 +62,13 @@ async function migrateOne(z, file, opts) {
     const lines = verify.toString('utf8').split('\n').length - 1;
     const srcLines = plain.toString('utf8').split('\n').length - 1;
     if (lines !== srcLines) return { id, status: 'failed', error: 'E_SELF_CHECK', targetPath: null };
-    // 写入目标
+    // 写入目标（dry-run 不写）
     const targetDir = path.join(targetRoot, 'sessions', projectKey(newCwd), id);
-    mkdirSync(targetDir, { recursive: true });
     const targetPath = path.join(targetDir, 'session.jsonl.zstd');
-    writeFileSync(targetPath, out);
+    if (!dryRun) {
+      mkdirSync(targetDir, { recursive: true });
+      writeFileSync(targetPath, out);
+    }
     return { id, status: 'migrated', from: srcCwd, to: newCwd, targetPath, error: null };
   } catch (e) {
     return { id, status: 'failed', error: e.code || 'E_UNKNOWN', targetPath: null };
@@ -80,7 +85,7 @@ export async function migrate(opts) {
   const files = walkSessions(srcRoot);
   const items = [];
   for (const f of files) {
-    const r = await migrateOne(z, f, { targetRoot, direction, mapRules, copyUnchanged });
+    const r = await migrateOne(z, f, { targetRoot, direction, mapRules, copyUnchanged, dryRun });
     if (dryRun && (r.status === 'migrated' || r.status === 'copied')) {
       r.targetPath = '[dry-run] ' + (r.targetPath ?? '');
     }

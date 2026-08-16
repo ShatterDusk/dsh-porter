@@ -24,7 +24,7 @@ export async function repairSession(file, opts) {
 
   // unknown-format：隔离 + 报告（含副本建议）
   if (!isZstd) {
-    const q = quarantineDir ?? path.join(path.dirname(path.dirname(file)), '.quarantine');
+    const q = quarantineDir ?? path.join(path.dirname(path.dirname(path.dirname(file))), '.quarantine');
     const qPath = path.join(q, id, path.basename(file));
     mkdirSync(path.dirname(qPath), { recursive: true });
     renameSync(file, qPath);
@@ -51,7 +51,7 @@ export async function repairSession(file, opts) {
   }
   if (recovered.length === 0) {
     // 一个帧都解不了：隔离
-    const q = quarantineDir ?? path.join(path.dirname(path.dirname(file)), '.quarantine');
+    const q = quarantineDir ?? path.join(path.dirname(path.dirname(path.dirname(file))), '.quarantine');
     const qPath = path.join(q, id, path.basename(file));
     mkdirSync(path.dirname(qPath), { recursive: true });
     renameSync(file, qPath);
@@ -61,7 +61,7 @@ export async function repairSession(file, opts) {
   const plainAll = Buffer.concat(recovered);
   const first = plainAll.indexOf(0x0A);
   if (first < 0) {
-    const q = quarantineDir ?? path.join(path.dirname(path.dirname(file)), '.quarantine');
+    const q = quarantineDir ?? path.join(path.dirname(path.dirname(path.dirname(file))), '.quarantine');
     const qPath = path.join(q, id, path.basename(file));
     mkdirSync(path.dirname(qPath), { recursive: true });
     renameSync(file, qPath);
@@ -70,13 +70,14 @@ export async function repairSession(file, opts) {
   const headerLine = plainAll.subarray(0, first);
   const events = plainAll.subarray(first + 1);
   const frame1 = z.compress(Buffer.concat([headerLine, Buffer.from([0x0A])]));
-  const frame2 = z.compress(events);
+  // 空事件（只有 header 被恢复）：仅 header 帧即可（dsh 格式允许 0 事件会话）
+  const frame2 = events.length > 0 ? z.compress(events) : null;
   // 原文件移入 quarantine（备份），修复版写回
-  const q = quarantineDir ?? path.join(path.dirname(path.dirname(file)), '.quarantine');
+  const q = quarantineDir ?? path.join(path.dirname(path.dirname(path.dirname(file))), '.quarantine');
   const qPath = path.join(q, id + '.corrupt-original', path.basename(file));
   mkdirSync(path.dirname(qPath), { recursive: true });
   renameSync(file, qPath);
-  writeFileSync(file, Buffer.concat([frame1, frame2]));
+  writeFileSync(file, frame2 ? Buffer.concat([frame1, frame2]) : frame1);
   const lines = plainAll.toString('utf8').split('\n').length - 1;
   return { command: 'repair', toolVersion: '0.1.0', items: [{ id, status: 'repaired', reason: 'torn-truncated', framesKept: lastGood, lines, quarantinePath: qPath }], exitCode: 0 };
 }

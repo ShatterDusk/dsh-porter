@@ -1,9 +1,18 @@
-# dsh-porter — SPEC v1.1
+# dsh-porter — SPEC v1.2
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v1.2（2026-08-16，测试套件落地，7/7 通过）
+- **自动化测试套件**（test/，node:test + 合成 fixtures）：7 测试覆盖 5 命令
+- **测试暴露并修复的 4 个真实 bug**（此前手动验收侥幸漏过）：
+  1. migrate dry-run 不阻止写入（dry-run 实写文件）
+  2. zstd decompress 忽略 fzstd 返回 byteOffset → 解压混入垃圾字节（影响所有命令）
+  3. boku wasm 初始化竞态（node:test 并发顶层测试 → 压缩产物损坏）→ zstd.js 模块级锁
+  4. repair quarantine 路径层级错误（隔离到分组而非 sessions 根）
+- 测试方法论固化：合成 fixtures（与生产同 zstd lib）→ 每命令行为断言（dry-run 零写入/skip 语义/三态判定/往返一致/两阶段协议）
 
 ### v1.1（2026-08-16，archive 命令实现验收，5/5 命令闭环 🎉）
 - **archive 命令实现**（src/archive.js），两阶段协议验收：
