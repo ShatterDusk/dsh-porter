@@ -1,9 +1,16 @@
-# dsh-porter — SPEC v0.7
+# dsh-porter — SPEC v0.8
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v0.8（2026-08-16，inspect 实现验收：torn 判定实测修正）
+- **inspect 命令实现**（src/inspect.js），验收结果：
+  - 单会话/全量/构造样本（污染→unknown-format ✓、截断→corrupt ✓）均正确
+  - **torn 判定实测修正**：fzstd.decompress 对任何尾部残缺（实测去 10B/100B/500B/2000B 均失败）**严格报 corrupt**——"整体解码通过+尾帧残缺"场景在 fzstd 语义下不出现
+  - 修订健康分级：**ok / corrupt（含 torn tail，报告注明"dsh 可截断修复"）/ unknown-format**；帧级扫描保留为防御性检查（帧数统计 + 未来解码器行为变化防护）
+- 实现备注：inspect 目录语义 = 数据根（含 sessions/）；帧数/行数/大小/header 字段全部输出；--json 符合 §3.7
 
 ### v0.7（2026-08-16，migrate 首个命令实现验收）
 - **migrate 命令完整实现**（src/migrate.js + lib/zstd.js + lib/cwd.js），真实数据验收：

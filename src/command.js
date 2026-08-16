@@ -2,6 +2,7 @@
  * dsh-porter 命令分发（SPEC §3.8 退出码语义）
  */
 import { migrate } from './migrate.js';
+import { inspect } from './inspect.js';
 
 export class Command {
   constructor(args) { this.args = args; }
@@ -10,7 +11,7 @@ export class Command {
     const [name, ...rest] = this.args;
     switch (name) {
       case 'migrate': return this.runMigrate(rest);
-      case 'inspect': return this.notImplemented('inspect');
+      case 'inspect': return this.runInspect(rest);
       case 'convert': return this.notImplemented('convert');
       case 'repair': return this.notImplemented('repair');
       case 'archive': return this.notImplemented('archive');
@@ -49,6 +50,20 @@ export class Command {
       console.log(`[${item.status}] ${item.id.slice(0, 24)} ${arrow}`);
     }
     console.log(`汇总: 共 ${result.summary.total} | 迁移 ${result.summary.migrated} | 复制 ${result.summary.copied} | 跳过 ${result.summary.skipped} | 失败 ${result.summary.failed}`);
+    return { exitCode: result.exitCode };
+  }
+
+  // inspect <会话文件|数据根> [--json]
+  async runInspect(args) {
+    if (args.length < 1) { const e = new Error('inspect 需要 <会话文件|数据根>'); e.code = 'E_USAGE'; e.exitCode = 2; throw e; }
+    const target = args[0];
+    const json = args.includes('--json');
+    const result = await inspect(target);
+    if (json) { const { exitCode, ...j } = result; return { json: j, exitCode }; }
+    for (const item of result.items) {
+      console.log(`[${item.status.padEnd(13)}] ${(item.id ?? '').slice(0, 30).padEnd(32)} cwd=${item.cwd ?? '-'} v${item.version ?? '-'} 帧=${item.frames ?? '-'} 行=${item.lines ?? '-'} ${item.size}B`);
+    }
+    console.log(`汇总: 共 ${result.summary.total} | ok ${result.summary.ok} | torn ${result.summary.torn} | corrupt ${result.summary.corrupt} | unknown ${result.summary.unknown}`);
     return { exitCode: result.exitCode };
   }
 
