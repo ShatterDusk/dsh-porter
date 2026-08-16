@@ -1,9 +1,17 @@
-# dsh-porter — SPEC v0.6
+# dsh-porter — SPEC v0.7
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v0.7（2026-08-16，migrate 首个命令实现验收）
+- **migrate 命令完整实现**（src/migrate.js + lib/zstd.js + lib/cwd.js），真实数据验收：
+  - dry-run：64 会话 迁移 6 / 跳过 58 / 失败 0（与 ops 原型一致）
+  - --json：输出符合 §3.7 schema（command/dryRun/summary/items 完整）
+  - 真实迁移：6 会话写入目标根正确分组（--mnt-f-PROJECTS--），产物生成成功
+  - 错误分级生效：E_NO_ZSTD_DEPS（依赖缺失）→ 退出码 3；E_USAGE → 2
+- 实现备注：依赖加载支持"项目 node_modules → ops 原型 .migrate-tools"双候选（开发期 fallback）；`--copy-unchanged` 对明文/压缩保持原格式复制
 
 ### v0.6（2026-08-16，实现前定义补全）
 - 新增 §3.6 `--map` 多路径映射表格式（不止 PROJECTS 一个映射）
