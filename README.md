@@ -39,6 +39,34 @@ DSH 的会话存在数据根的 `sessions/` 下，按工作目录编码分组：
 
 **不解决**：模型配置、插件安装、凭据管理（那些用 DSH 自己的机制）；多数据根之间的实时同步（它是迁移工具，不是同步服务）。
 
+## 功能边界（先读这个，避免误解）
+
+**dsh-porter 不是"完整根移动工具"——它只处理会因直接 copy 而损坏的会话数据。**
+
+`~/.dsh` 各部分的搬家方式：
+
+| 组成部分 | 直接 copy 会怎样 | 正确做法 |
+|---|---|---|
+| `sessions/`（会话） | ❌ cwd 路径编码写死在二进制 header，直接 copy 必出问题（未分组/格式崩/甚至 dsh 崩溃） | **dsh-porter migrate** |
+| `storages/workspace.json`（归属/归档） | ⚠️ 归属记录不跟着文件走 | **dsh-porter 自动同步**（v0.2.0 起） |
+| `settings.yaml` / `AGENTS.md` / `.credentials.yaml` | ✅ 直接 copy 就完美（纯文本，无路径编码） | 直接复制 |
+| `profiles/`（插件配置） | ✅ 配置直接 copy；node_modules 需重装 | 配置复制 + pnpm install |
+| `storages/session_projcache.json` | ⚠️ 缓存，丢失自动重建 | 不用管 |
+
+**完整迁移数据根 = 组合拳**（配置直接复制 + 会话用 dsh-porter）：
+
+```bash
+# 示例：把整个数据根从 Windows 端搬到 WSL 端
+# 1. 配置部分直接复制（本来就该这样）
+cp -r /mnt/c/Users/1/.dsh/{settings.yaml,AGENTS.md,.credentials.yaml,profiles} ~/.dsh/
+
+# 2. 会话部分用 dsh-porter（直接 copy 会坏的部分）
+dsh-porter migrate /mnt/c/Users/1/.dsh ~/.dsh --direction to-wsl
+
+# 3. 插件依赖重装（如需要）
+cd ~/.dsh/profiles/web && pnpm install
+```
+
 ## 安装
 
 ```bash
