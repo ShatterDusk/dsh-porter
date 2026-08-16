@@ -1,9 +1,15 @@
-# dsh-porter — SPEC v0.5
+# dsh-porter — SPEC v0.6
 
 > DSH 会话数据的跨根迁移 / 格式转换 / 体检修复工具箱（独立 CLI，零 dsh 依赖）
 > 状态：迭代中。每版以"用户故事情景验收"为准修订。
 
 ## 0. 变更记录
+
+### v0.6（2026-08-16，实现前定义补全）
+- 新增 §3.6 `--map` 多路径映射表格式（不止 PROJECTS 一个映射）
+- 新增 §3.7 `--json` 输出 schema（US-5 落地，脚本消费契约）
+- 新增 §3.8 错误分级与退出码（4 级语义）
+- 验收方法：均为实现前置定义，实现时按 schema 验收
 
 ### v0.5（2026-08-16，US-6 验收驱动：archive 删源安全）
 - **US-6 验收**（两阶段删除协议模拟走查）：三个安全属性实测成立——① 迁移失败 → 源未动；② 误删可恢复（暂存阶段）；③ 断电可重入（幂等）
@@ -86,6 +92,47 @@ DSH（DeepSeek Harness）会话数据（`sessions/*/session.jsonl.zstd`）在**�
   - 阶段 2b：用户确认后清空暂存（真删除）
 - 强制 `--dry-run` 先预览（列出将迁移+删除的会话）
 - 安全属性：迁移失败源未动 / 误删可恢复 / 断电可重入（幂等）
+
+### 3.6 `--map` 多路径映射表
+
+```
+--map "源前缀=目标前缀,源前缀=目标前缀,..."    （逗号分隔多规则；方向由 --direction 决定）
+例: --map "D:\work=/mnt/d/work,E:\data=/mnt/e/data"
+```
+
+- 匹配：**最长前缀匹配**（cwd 以源前缀开头即命中）；未命中映射的 cwd 保持原样（计入 SKIP）
+- `--direction auto`：按 cwd 形态自动判定——`/mnt/x/` 开头 → to-win（需 `--map` 提供盘符目标，缺省盘符按 `/mnt/<x>` → `<X>:\` 规则）；`X:\` 开头 → to-wsl
+- 内置默认规则：`X:\` ↔ `/mnt/x/`（大小写不敏感匹配盘符）
+
+### 3.7 `--json` 输出 schema（US-5）
+
+所有命令 `--json` 输出单一 JSON 对象到 stdout（人类输出走 stderr 或 `--verbose`）：
+
+```json
+{
+  "command": "migrate",
+  "toolVersion": "0.1.0",
+  "dryRun": true,
+  "summary": { "total": 64, "migrated": 6, "copied": 0, "skipped": 58, "failed": 0 },
+  "items": [
+    { "id": "session-xxx", "status": "migrated|copied|skipped|failed|ok|torn|corrupt|unknown",
+      "from": "/mnt/f/PROJECTS", "to": "F:\\PROJECTS",
+      "targetPath": "C:/.../session.jsonl.zstd", "error": null }
+  ]
+}
+```
+
+- `status` 枚举按命令域：migrate/archive 用 migrated/copied/skipped/failed；inspect 用 ok/torn/corrupt/unknown
+- `error`：失败时的机器可读错误码 + 人类消息（`"E_NO_ZSTD_DEPS" / "E_NOT_ZSTD" / "E_TORN" / "E_CONFLICT" / "E_SELF_CHECK"`）
+
+### 3.8 错误分级与退出码
+
+| 码 | 含义 | 触发 |
+|---|---|---|
+| 0 | 全部成功（含 skipped） | — |
+| 1 | 部分失败（有 failed 项） | 单会话失败但命令完成 |
+| 2 | 用法错误 | 参数缺失/非法、路径不存在 |
+| 3 | 环境错误 | 依赖缺失（.migrate-tools 未装）、目标不可写 |
 
 ## 4. 架构决策
 
