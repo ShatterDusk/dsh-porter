@@ -14,7 +14,7 @@
   "repository": { "type": "git", "url": "git+https://github.com/ShatterDusk/dsh-porter.git" },
   "bugs": { "url": "https://github.com/ShatterDusk/dsh-porter/issues" },
   "homepage": "https://github.com/ShatterDusk/dsh-porter#readme",
-  "files": ["src/", "README.md", "LICENSE", "SPEC.md", "docs/", "examples/"],
+  "files": ["src/", "README.md", "LICENSE", "docs/format.md", "examples/"],
   "dependencies": {
     "fzstd": "^0.1.1",
     "@bokuweb/zstd-wasm": "^0.0.27"

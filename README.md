@@ -39,11 +39,9 @@ dsh-porter migrate /mnt/c/Users/1/.dsh ~/.dsh --direction to-wsl
 
 所有命令支持 `--json` 与语义化退出码（0 成功 / 1 部分失败 / 2 用法 / 3 环境）。
 
-## Docs
+## Research
 
-- [docs/format.md](docs/format.md) — DSH 会话格式（reverse-engineered）
-- [docs/competitor-analysis.md](docs/competitor-analysis.md) — 生态与竞品
-- [SPEC.md](SPEC.md) — 规格与验收记录
+- [docs/format.md](docs/format.md) — DSH 会话格式研究（帧结构 / header schema / 兼容约束；生态内首份公开文档）
 
 ## Test
 
